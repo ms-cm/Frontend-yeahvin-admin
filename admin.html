@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yeahvin — Dashboard Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a25;
+            --bg-card-hover: #1f1f2d;
+            --bg-elevated: #222232;
+            --blue-400: #60a5fa;
+            --blue-500: #3b82f6;
+            --blue-600: #2563eb;
+            --blue-700: #1d4ed8;
+            --gold: #c9a84c;
+            --gold-light: #e0c878;
+            --text-primary: #f1f1f3;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6b6b7b;
+            --text-white: #ffffff;
+            --border-color: #2a2a3a;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --font-heading: 'Cormorant Garamond', Georgia, serif;
+            --font-body: 'DM Sans', -apple-system, sans-serif;
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
+            --transition: 200ms ease;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .hidden { display: none !important; }
+        .container { max-width: 1300px; margin: 0 auto; padding: 0 20px; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 20px; border: none; border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 14px; font-weight: 500;
+            cursor: pointer; transition: all var(--transition);
+        }
+        .btn-primary { background: var(--blue-600); color: white; }
+        .btn-primary:hover { background: var(--blue-500); }
+        .btn-ghost { background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-ghost:hover { border-color: var(--text-muted); }
+        .btn-danger { background: transparent; color: var(--error); border: 1px solid var(--error); }
+        .btn-danger:hover { background: rgba(239,68,68,0.1); }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .input, select, textarea {
+            width: 100%; padding: 10px 14px;
+            background: var(--bg-secondary); border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm); color: var(--text-primary);
+            font-family: var(--font-body); font-size: 14px;
+        }
+        .input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blue-500); }
+        label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+        .form-group { margin-bottom: 16px; }
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: var(--bg-elevated); color: var(--text-primary); padding: 12px 24px;
+            border-radius: var(--radius-md); border: 1px solid var(--border-color);
+            z-index: 9999; opacity: 0; transition: all var(--transition);
+            pointer-events: none; font-size: 14px; max-width: 90vw;
+        }
+        .toast--visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast--success { border-color: var(--success); background: #064e3b; color: #6ee7b7; }
+        .toast--error { border-color: var(--error); background: #450a0a; color: #fca5a5; }
+
+        .login-overlay {
+            position: fixed; inset: 0; background: var(--bg-primary);
+            display: flex; align-items: center; justify-content: center; z-index: 10000;
+        }
+        .login-box {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); padding: 40px; width: 360px; max-width: 90vw;
+        }
+        .login-box h1 { font-family: var(--font-heading); font-size: 32px; margin-bottom: 8px; }
+        .login-box p { color: var(--text-secondary); margin-bottom: 24px; font-size: 14px; }
+
+        .admin-header {
+            background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);
+            padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .admin-header .logo { font-family: var(--font-heading); font-size: 24px; font-weight: 700; }
+        .admin-header .user-info { display: flex; align-items: center; gap: 12px; }
+        .admin-nav {
+            background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);
+            padding: 0 24px; display: flex; gap: 4px; overflow-x: auto;
+        }
+        .admin-nav button {
+            padding: 12px 20px; background: none; border: none; border-bottom: 2px solid transparent;
+            color: var(--text-secondary); font-family: var(--font-body); font-size: 14px; cursor: pointer;
+            white-space: nowrap; transition: all var(--transition);
+        }
+        .admin-nav button:hover { color: var(--text-primary); }
+        .admin-nav button.active { color: var(--blue-400); border-bottom-color: var(--blue-400); }
+        .admin-content { padding: 24px; flex: 1; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+        .stat-card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); padding: 20px;
+        }
+        .stat-card .stat-value { font-size: 32px; font-weight: 700; color: var(--text-white); }
+        .stat-card .stat-label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); padding: 24px; margin-bottom: 24px;
+        }
+        .card h3 { font-family: var(--font-heading); font-size: 22px; margin-bottom: 16px; color: var(--text-white); }
+
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { color: var(--text-muted); font-weight: 500; font-size: 12px; text-transform: uppercase; }
+        td { color: var(--text-secondary); }
+        .badge {
+            display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;
+        }
+        .badge-digital { background: rgba(96,165,250,0.2); color: var(--blue-400); }
+        .badge-physique { background: rgba(201,168,76,0.2); color: var(--gold-light); }
+        .badge-featured { background: rgba(16,185,129,0.2); color: var(--success); }
+
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 5000;
+            display: flex; align-items: flex-start; justify-content: center; padding-top: 40px;
+        }
+        .modal {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); padding: 32px; width: 600px; max-width: 95vw; max-height: 85vh; overflow-y: auto;
+        }
+        .modal h2 { font-family: var(--font-heading); font-size: 24px; margin-bottom: 20px; }
+        .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <!-- Login -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <h1>⚡ Yeahvin</h1>
+            <p>Dashboard administrateur</p>
+            <div class="form-group">
+                <label for="adminPassword">Mot de passe admin</label>
+                <input type="password" id="adminPassword" class="input" placeholder="••••••••">
+            </div>
+            <button class="btn btn-primary" id="loginBtn" style="width:100%;">Se connecter</button>
+            <p id="loginError" style="color:var(--error);font-size:13px;margin-top:8px;min-height:20px;"></p>
+        </div>
+    </div>
+
+    <!-- App -->
+    <div id="app" class="hidden" style="display:flex;flex-direction:column;min-height:100vh;">
+        <header class="admin-header">
+            <span class="logo">⚡ Yeahvin Admin</span>
+            <div class="user-info">
+                <span style="color:var(--text-muted);font-size:14px;">Admin</span>
+                <button class="btn btn-ghost btn-sm" id="logoutBtn">Déconnexion</button>
+            </div>
+        </header>
+        <nav class="admin-nav" id="adminNav">
+            <button class="active" data-tab="dashboard">📊 Dashboard</button>
+            <button data-tab="products">📦 Produits</button>
+            <button data-tab="promos">🎫 Codes Promo</button>
+            <button data-tab="orders">📋 Commandes</button>
+            <button data-tab="settings">⚙️ Paramètres</button>
+        </nav>
+        <main class="admin-content">
+            <!-- Dashboard -->
+            <div class="tab-content active" id="tab-dashboard">
+                <div class="stats-grid" id="statsGrid"></div>
+            </div>
+            <!-- Produits -->
+            <div class="tab-content" id="tab-products">
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                        <h3>Liste des produits</h3>
+                        <button class="btn btn-primary" id="addProductBtn">+ Nouveau produit</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>Image</th><th>Nom</th><th>Catégorie</th><th>Type</th><th>Prix</th><th>Stock</th><th>Vedette</th><th>Actions</th></tr></thead>
+                            <tbody id="productsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- Promos -->
+            <div class="tab-content" id="tab-promos">
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                        <h3>Codes Promo</h3>
+                        <button class="btn btn-primary" id="addPromoBtn">+ Nouveau code</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>Code</th><th>Réduction</th><th>Expire le</th><th>Actif</th><th>Actions</th></tr></thead>
+                            <tbody id="promosTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- Commandes -->
+            <div class="tab-content" id="tab-orders">
+                <div class="card">
+                    <h3>Gestion des commandes</h3>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>N° Commande</th><th>Client</th><th>Montant</th><th>Date</th><th>Produits</th><th>Statut</th></tr></thead>
+                            <tbody id="ordersTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- Paramètres -->
+            <div class="tab-content" id="tab-settings">
+                <div class="card">
+                    <h3>Upload de fichier PDF</h3>
+                    <p style="color:var(--text-secondary);margin-bottom:16px;">Les PDFs sont stockés hors webroot et protégés.</p>
+                    <div class="form-group">
+                        <label for="pdfFile">Sélectionner un PDF</label>
+                        <input type="file" id="pdfFile" accept=".pdf" class="input">
+                    </div>
+                    <button class="btn btn-primary" id="uploadPdfBtn">Uploader le PDF</button>
+                    <p id="pdfUploadFeedback" style="font-size:13px;margin-top:8px;color:var(--text-muted);"></p>
+                </div>
+                <div class="card">
+                    <h3>Changer le numéro WhatsApp</h3>
+                    <div class="form-group">
+                        <label for="whatsappInput">Numéro WhatsApp (format international sans +)</label>
+                        <input type="text" id="whatsappInput" class="input" placeholder="22377555575" value="22377555575">
+                    </div>
+                    <button class="btn btn-primary" id="saveWhatsappBtn">Enregistrer</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Produit -->
+    <div class="modal-overlay hidden" id="productModal">
+        <div class="modal">
+            <h2 id="productModalTitle">Ajouter un produit</h2>
+            <form id="productForm">
+                <input type="hidden" id="productId">
+                <div class="form-group"><label for="prodName">Nom *</label><input type="text" id="prodName" class="input" required></div>
+                <div class="form-group"><label for="prodDesc">Description *</label><textarea id="prodDesc" class="input" rows="3" required></textarea></div>
+                <div class="form-group"><label for="prodPrice">Prix (FCFA) *</label><input type="number" id="prodPrice" class="input" required min="0"></div>
+                <div class="form-group"><label for="prodCategory">Catégorie *</label>
+                    <select id="prodCategory" class="input" required>
+                        <option value="">Choisir...</option>
+                        <option value="templates">Templates & Assets</option>
+                        <option value="ebooks">E-books & Guides</option>
+                        <option value="scripts">Scripts & Outils</option>
+                        <option value="goodies">Goodies</option>
+                    </select>
+                </div>
+                <div class="form-group"><label for="prodType">Type *</label>
+                    <select id="prodType" class="input" required>
+                        <option value="digital">Digital</option>
+                        <option value="physique">Physique</option>
+                    </select>
+                </div>
+                <div class="form-group"><label for="prodStock">Stock</label><input type="number" id="prodStock" class="input" value="9999"></div>
+                <div class="form-group"><label>Vedette</label><input type="checkbox" id="prodFeatured" value="true"></div>
+                <div class="form-group"><label for="prodImages">Images (5 max)</label><input type="file" id="prodImages" class="input" accept="image/*" multiple></div>
+                <div class="form-group"><label for="prodFileUrl">Fichier PDF (nom du fichier sur le serveur)</label><input type="text" id="prodFileUrl" class="input" placeholder="ex: abc123.pdf"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <button type="button" class="btn btn-ghost" id="cancelProductBtn">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Promo -->
+    <div class="modal-overlay hidden" id="promoModal">
+        <div class="modal">
+            <h2 id="promoModalTitle">Ajouter un code promo</h2>
+            <form id="promoForm">
+                <input type="hidden" id="promoId">
+                <div class="form-group"><label for="promoCode">Code *</label><input type="text" id="promoCode" class="input" required></div>
+                <div class="form-group"><label for="promoDiscount">Réduction (%) *</label><input type="number" id="promoDiscount" class="input" required min="1" max="100"></div>
+                <div class="form-group"><label for="promoExpiry">Date d'expiration *</label><input type="date" id="promoExpiry" class="input" required></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <button type="button" class="btn btn-ghost" id="cancelPromoBtn">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        (function() {
+            const API_BASE = 'https://yeahvin-backend.onrender.com';
+            let adminPassword = '';
+
+            const loginOverlay = document.getElementById('loginOverlay');
+            const adminPasswordInput = document.getElementById('adminPassword');
+            const loginBtn = document.getElementById('loginBtn');
+            const loginError = document.getElementById('loginError');
+            const app = document.getElementById('app');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const toast = document.getElementById('toast');
+
+            function showToast(msg, type) {
+                type = type || 'success';
+                toast.textContent = msg;
+                toast.className = 'toast toast--' + type + ' toast--visible';
+                clearTimeout(toast._t);
+                toast._t = setTimeout(function() { toast.classList.remove('toast--visible'); }, 3000);
+            }
+
+            function formatPrice(p) {
+                return new Intl.NumberFormat('fr-FR').format(p) + ' FCFA';
+            }
+
+            async function apiFetch(endpoint, options) {
+                options = options || {};
+                var url = API_BASE + endpoint;
+                var headers = {};
+                if (options.headers) { for (var k in options.headers) headers[k] = options.headers[k]; }
+                headers['password'] = adminPassword;
+                if (!(options.body instanceof FormData)) { headers['Content-Type'] = 'application/json'; }
+                var config = { method: options.method || 'GET', headers: headers };
+                if (options.body) config.body = options.body;
+                var controller = new AbortController();
+                var timeout = setTimeout(function() { controller.abort(); }, 60000);
+                config.signal = controller.signal;
+                try {
+                    var response = await fetch(url, config);
+                    clearTimeout(timeout);
+                    if (!response.ok) { var err = await response.json().catch(function() { return {}; }); throw new Error(err.error || err.message || 'Erreur ' + response.status); }
+                    return await response.json();
+                } catch (e) { clearTimeout(timeout); throw e; }
+            }
+
+            function checkLogin() {
+                var saved = localStorage.getItem('yeahvin_admin_password');
+                if (saved) { adminPassword = saved; loginOverlay.classList.add('hidden'); app.classList.remove('hidden'); app.style.display = 'flex'; loadDashboard(); }
+            }
+
+            loginBtn.addEventListener('click', async function() {
+                var pwd = adminPasswordInput.value.trim();
+                if (!pwd) { loginError.textContent = 'Mot de passe requis'; return; }
+                loginError.textContent = 'Vérification...';
+                try {
+                    var res = await fetch(API_BASE + '/api/admin/stats', { headers: { 'password': pwd } });
+                    if (!res.ok) throw new Error('Mot de passe incorrect');
+                    adminPassword = pwd;
+                    localStorage.setItem('yeahvin_admin_password', pwd);
+                    loginOverlay.classList.add('hidden');
+                    app.classList.remove('hidden');
+                    app.style.display = 'flex';
+                    loadDashboard();
+                } catch (e) { loginError.textContent = e.message || 'Erreur de connexion'; }
+            });
+
+            adminPasswordInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') loginBtn.click(); });
+
+            logoutBtn.addEventListener('click', function() {
+                localStorage.removeItem('yeahvin_admin_password');
+                adminPassword = '';
+                loginOverlay.classList.remove('hidden');
+                app.classList.add('hidden');
+                app.style.display = 'none';
+                adminPasswordInput.value = '';
+                loginError.textContent = '';
+            });
+
+            var navButtons = document.querySelectorAll('#adminNav button');
+            var tabContents = document.querySelectorAll('.tab-content');
+            navButtons.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var tab = btn.getAttribute('data-tab');
+                    navButtons.forEach(function(b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                    tabContents.forEach(function(tc) { tc.classList.remove('active'); });
+                    document.getElementById('tab-' + tab).classList.add('active');
+                    if (tab === 'dashboard') loadDashboard();
+                    if (tab === 'products') loadProducts();
+                    if (tab === 'promos') loadPromos();
+                    if (tab === 'orders') loadOrders();
+                });
+            });
+
+            async function loadDashboard() {
+                var grid = document.getElementById('statsGrid');
+                if (!grid) return;
+                try {
+                    var data = await apiFetch('/api/admin/stats');
+                    var s = data.stats;
+                    grid.innerHTML = '';
+                    var cards = [
+                        { v: s.totalProducts, l: 'Produits total' },
+                        { v: s.totalDigital || 0, l: 'Digitaux' },
+                        { v: s.totalPhysique || 0, l: 'Physiques' },
+                        { v: s.totalClients, l: 'Clients' },
+                        { v: s.totalOrders || 0, l: 'Commandes' },
+                        { v: s.activePromos, l: 'Promos actives' },
+                        { v: s.featuredProducts, l: 'Produits vedettes' }
+                    ];
+                    cards.forEach(function(c) {
+                        var card = document.createElement('div');
+                        card.className = 'stat-card';
+                        card.innerHTML = '<div class="stat-value">' + c.v + '</div><div class="stat-label">' + c.l + '</div>';
+                        grid.appendChild(card);
+                    });
+                } catch (e) { showToast('Erreur chargement stats: ' + e.message, 'error'); }
+            }
+
+            async function loadProducts() {
+                var tbody = document.getElementById('productsTableBody');
+                if (!tbody) return;
+                tbody.innerHTML = '<tr><td colspan="8">Chargement...</td></tr>';
+                try {
+                    var data = await apiFetch('/api/products?limit=50');
+                    tbody.innerHTML = '';
+                    data.products.forEach(function(p) {
+                        var tr = document.createElement('tr');
+                        tr.innerHTML = '<td>' + (p.images && p.images[0] ? '<img src="' + p.images[0].url + '" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">' : '—') + '</td>' +
+                            '<td style="color:var(--text-white);">' + p.name + '</td>' +
+                            '<td>' + p.category + '</td>' +
+                            '<td><span class="badge badge-' + (p.type || 'digital') + '">' + (p.type || 'digital') + '</span></td>' +
+                            '<td>' + formatPrice(p.price) + '</td>' +
+                            '<td>' + p.stock + '</td>' +
+                            '<td>' + (p.featured ? '<span class="badge badge-featured">★</span>' : '—') + '</td>' +
+                            '<td><button class="btn btn-ghost btn-sm edit-product" data-id="' + p._id + '">✏️</button> <button class="btn btn-danger btn-sm delete-product" data-id="' + p._id + '">🗑️</button></td>';
+                        tbody.appendChild(tr);
+                    });
+                    document.querySelectorAll('.edit-product').forEach(function(b) { b.addEventListener('click', function() { openProductModal(b.getAttribute('data-id')); }); });
+                    document.querySelectorAll('.delete-product').forEach(function(b) { b.addEventListener('click', function() { deleteProduct(b.getAttribute('data-id')); }); });
+                } catch (e) { tbody.innerHTML = '<tr><td colspan="8">Erreur: ' + e.message + '</td></tr>'; }
+            }
+
+            var productModal = document.getElementById('productModal');
+            var productForm = document.getElementById('productForm');
+            var addProductBtn = document.getElementById('addProductBtn');
+            var cancelProductBtn = document.getElementById('cancelProductBtn');
+            var productModalTitle = document.getElementById('productModalTitle');
+            var productIdInput = document.getElementById('productId');
+
+            addProductBtn.addEventListener('click', function() {
+                productIdInput.value = ''; productForm.reset();
+                document.getElementById('prodStock').value = '9999';
+                productModalTitle.textContent = 'Ajouter un produit';
+                productModal.classList.remove('hidden');
+            });
+            cancelProductBtn.addEventListener('click', function() { productModal.classList.add('hidden'); });
+            productModal.addEventListener('click', function(e) { if (e.target === productModal) productModal.classList.add('hidden'); });
+
+            productForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                var id = productIdInput.value;
+                var formData = new FormData();
+                formData.append('name', document.getElementById('prodName').value);
+                formData.append('description', document.getElementById('prodDesc').value);
+                formData.append('price', document.getElementById('prodPrice').value);
+                formData.append('category', document.getElementById('prodCategory').value);
+                formData.append('type', document.getElementById('prodType').value);
+                formData.append('stock', document.getElementById('prodStock').value);
+                formData.append('featured', document.getElementById('prodFeatured').checked ? 'true' : 'false');
+                formData.append('fileUrl', document.getElementById('prodFileUrl').value);
+                var imageFiles = document.getElementById('prodImages').files;
+                for (var i = 0; i < imageFiles.length; i++) { formData.append('images', imageFiles[i]); }
+                try {
+                    if (id) { await apiFetch('/api/products/' + id, { method: 'PUT', body: formData }); showToast('Produit mis à jour'); }
+                    else { await apiFetch('/api/products', { method: 'POST', body: formData }); showToast('Produit créé'); }
+                    productModal.classList.add('hidden');
+                    loadProducts(); loadDashboard();
+                } catch (err) { showToast('Erreur: ' + err.message, 'error'); }
+            });
+
+            async function openProductModal(id) {
+                try {
+                    var data = await apiFetch('/api/products/' + id);
+                    var p = data.product;
+                    productIdInput.value = p._id;
+                    document.getElementById('prodName').value = p.name;
+                    document.getElementById('prodDesc').value = p.description;
+                    document.getElementById('prodPrice').value = p.price;
+                    document.getElementById('prodCategory').value = p.category;
+                    document.getElementById('prodType').value = p.type || 'digital';
+                    document.getElementById('prodStock').value = p.stock;
+                    document.getElementById('prodFeatured').checked = p.featured;
+                    document.getElementById('prodFileUrl').value = p.fileUrl || '';
+                    productModalTitle.textContent = 'Modifier le produit';
+                    productModal.classList.remove('hidden');
+                } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+            }
+
+            async function deleteProduct(id) {
+                if (!confirm('Supprimer ce produit ? Cette action est irréversible.')) return;
+                try { await apiFetch('/api/products/' + id, { method: 'DELETE' }); showToast('Produit supprimé'); loadProducts(); loadDashboard(); }
+                catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+            }
+
+            async function loadPromos() {
+                var tbody = document.getElementById('promosTableBody');
+                if (!tbody) return;
+                tbody.innerHTML = '<tr><td colspan="5">Chargement...</td></tr>';
+                try {
+                    var data = await apiFetch('/api/promo');
+                    tbody.innerHTML = '';
+                    data.promoCodes.forEach(function(p) {
+                        var tr = document.createElement('tr');
+                        tr.innerHTML = '<td style="color:var(--text-white);font-weight:600;">' + p.code + '</td>' +
+                            '<td>' + p.discount + '%</td>' +
+                            '<td>' + new Date(p.expiresAt).toLocaleDateString('fr-FR') + '</td>' +
+                            '<td>' + (p.active ? '✅' : '❌') + '</td>' +
+                            '<td><button class="btn btn-ghost btn-sm edit-promo" data-id="' + p._id + '">✏️</button> <button class="btn btn-danger btn-sm delete-promo" data-id="' + p._id + '">🗑️</button></td>';
+                        tbody.appendChild(tr);
+                    });
+                    document.querySelectorAll('.edit-promo').forEach(function(b) { b.addEventListener('click', function() { openPromoModal(b.getAttribute('data-id')); }); });
+                    document.querySelectorAll('.delete-promo').forEach(function(b) { b.addEventListener('click', function() { deletePromo(b.getAttribute('data-id')); }); });
+                } catch (e) { tbody.innerHTML = '<tr><td colspan="5">Erreur: ' + e.message + '</td></tr>'; }
+            }
+
+            var promoModal = document.getElementById('promoModal');
+            var promoForm = document.getElementById('promoForm');
+            var addPromoBtn = document.getElementById('addPromoBtn');
+            var cancelPromoBtn = document.getElementById('cancelPromoBtn');
+
+            addPromoBtn.addEventListener('click', function() {
+                document.getElementById('promoId').value = ''; promoForm.reset();
+                document.getElementById('promoModalTitle').textContent = 'Ajouter un code promo';
+                promoModal.classList.remove('hidden');
+            });
+            cancelPromoBtn.addEventListener('click', function() { promoModal.classList.add('hidden'); });
+            promoModal.addEventListener('click', function(e) { if (e.target === promoModal) promoModal.classList.add('hidden'); });
+
+            promoForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                var id = document.getElementById('promoId').value;
+                var body = { code: document.getElementById('promoCode').value, discount: parseInt(document.getElementById('promoDiscount').value), expiresAt: document.getElementById('promoExpiry').value };
+                try {
+                    if (id) { await apiFetch('/api/promo/' + id, { method: 'PUT', body: JSON.stringify(body) }); showToast('Code promo mis à jour'); }
+                    else { await apiFetch('/api/promo', { method: 'POST', body: JSON.stringify(body) }); showToast('Code promo créé'); }
+                    promoModal.classList.add('hidden');
+                    loadPromos(); loadDashboard();
+                } catch (err) { showToast('Erreur: ' + err.message, 'error'); }
+            });
+
+            async function openPromoModal(id) {
+                var data = await apiFetch('/api/promo');
+                var p = data.promoCodes.find(function(x) { return x._id === id; });
+                if (!p) return;
+                document.getElementById('promoId').value = p._id;
+                document.getElementById('promoCode').value = p.code;
+                document.getElementById('promoDiscount').value = p.discount;
+                document.getElementById('promoExpiry').value = new Date(p.expiresAt).toISOString().split('T')[0];
+                document.getElementById('promoModalTitle').textContent = 'Modifier le code promo';
+                promoModal.classList.remove('hidden');
+            }
+
+            async function deletePromo(id) {
+                if (!confirm('Supprimer ce code promo ?')) return;
+                await apiFetch('/api/promo/' + id, { method: 'DELETE' });
+                showToast('Code promo supprimé'); loadPromos();
+            }
+
+            // ============================================
+            // COMMANDES (AVEC BOUTON VALIDER)
+            // ============================================
+            async function loadOrders() {
+                var tbody = document.getElementById('ordersTableBody');
+                if (!tbody) return;
+                tbody.innerHTML = '<tr><td colspan="6">Chargement...</td></tr>';
+                try {
+                    var res = await apiFetch('/api/admin/orders');
+                    tbody.innerHTML = '';
+                    if (!res.orders || res.orders.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6">Aucune commande</td></tr>';
+                        return;
+                    }
+                    res.orders.forEach(function(order) {
+                        var tr = document.createElement('tr');
+                        var date = new Date(order.purchaseDate).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        var clientName = order.userId ? order.userId.fullName : 'Client';
+                        var statusBadge = order.status === 'completed' 
+                            ? '<span style="color:#10b981;">✅ Validée</span>' 
+                            : '<span style="color:#f59e0b;">⏳ En attente</span>';
+                        var productsList = order.products.map(function(p) { return p.productName + ' (x' + p.qty + ')'; }).join(', ');
+                        tr.innerHTML = 
+                            '<td style="color:var(--text-white);font-weight:600;">' + order.orderNumber + '</td>' +
+                            '<td>' + clientName + '</td>' +
+                            '<td>' + formatPrice(order.totalAmount) + '</td>' +
+                            '<td>' + date + '</td>' +
+                            '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + productsList + '</td>' +
+                            '<td>' + statusBadge + (order.status === 'pending' ? ' <button class="btn btn-primary btn-sm approve-order" data-order="' + order.orderNumber + '" style="margin-left:8px;">✅ Valider</button>' : '') + '</td>';
+                        tbody.appendChild(tr);
+                    });
+                    document.querySelectorAll('.approve-order').forEach(function(btn) {
+                        btn.addEventListener('click', async function() {
+                            var orderNumber = this.getAttribute('data-order');
+                            if (!confirm('Valider la commande ' + orderNumber + ' ? Les liens de téléchargement seront générés.')) return;
+                            this.disabled = true;
+                            this.textContent = 'Validation...';
+                            try {
+                                var result = await apiFetch('/api/admin/orders/' + orderNumber + '/approve', { method: 'PUT' });
+                                showToast('Commande validée ! ' + result.downloadLinks.length + ' lien(s) généré(s).');
+                                loadOrders(); loadDashboard();
+                            } catch (err) {
+                                showToast('Erreur : ' + err.message, 'error');
+                                this.disabled = false;
+                                this.textContent = '✅ Valider';
+                            }
+                        });
+                    });
+                } catch (e) {
+                    tbody.innerHTML = '<tr><td colspan="6">Erreur : ' + e.message + '</td></tr>';
+                }
+            }
+
+            // Upload PDF
+            document.getElementById('uploadPdfBtn').addEventListener('click', async function() {
+                var fileInput = document.getElementById('pdfFile');
+                var feedback = document.getElementById('pdfUploadFeedback');
+                if (!fileInput.files.length) { feedback.textContent = 'Sélectionnez un fichier PDF.'; return; }
+                var formData = new FormData();
+                formData.append('pdf', fileInput.files[0]);
+                feedback.textContent = 'Upload en cours...';
+                try {
+                    var res = await apiFetch('/api/upload/pdf', { method: 'POST', body: formData });
+                    feedback.textContent = '✅ Uploadé : ' + res.file.url;
+                    showToast('PDF uploadé avec succès');
+                } catch (e) { feedback.textContent = '❌ Erreur: ' + e.message; }
+            });
+
+            checkLogin();
+        })();
+    </script>
+</body>
+</html>
