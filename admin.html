@@ -195,7 +195,7 @@
                     </div>
                     <div class="table-wrapper">
                         <table>
-                            <thead><tr><th>Image</th><th>Nom</th><th>Catégorie</th><th>Type</th><th>Prix</th><th>Stock</th><th>Vedette</th><th>Actions</th></tr></thead>
+                            <thead><tr><th>Image</th><th>Nom</th><th>Catégorie</th><th>Type</th><th>Prix</th><th>Stock</th><th>Vedette</th><th>Watermark</th><th>Actions</th></tr></thead>
                             <tbody id="productsTableBody"></tbody>
                         </table>
                     </div>
@@ -232,7 +232,7 @@
             <div class="tab-content" id="tab-settings">
                 <div class="card">
                     <h3>Upload de fichier PDF</h3>
-                    <p style="color:var(--text-secondary);margin-bottom:16px;">Les PDFs sont stockés hors webroot et protégés.</p>
+                    <p style="color:var(--text-secondary);margin-bottom:16px;">Les PDFs sont stockés sur Cloudinary et ne seront jamais effacés.</p>
                     <div class="form-group">
                         <label for="pdfFile">Sélectionner un PDF</label>
                         <input type="file" id="pdfFile" accept=".pdf" class="input">
@@ -278,8 +278,9 @@
                 </div>
                 <div class="form-group"><label for="prodStock">Stock</label><input type="number" id="prodStock" class="input" value="9999"></div>
                 <div class="form-group"><label>Vedette</label><input type="checkbox" id="prodFeatured" value="true"></div>
+                <div class="form-group"><label>Watermark (filigrane)</label><input type="checkbox" id="prodWatermarkable" value="true"></div>
                 <div class="form-group"><label for="prodImages">Images (5 max)</label><input type="file" id="prodImages" class="input" accept="image/*" multiple></div>
-                <div class="form-group"><label for="prodFileUrl">Fichier PDF (nom du fichier sur le serveur)</label><input type="text" id="prodFileUrl" class="input" placeholder="ex: abc123.pdf"></div>
+                <div class="form-group"><label for="prodFileUrl">Fichier PDF (URL Cloudinary complète)</label><input type="text" id="prodFileUrl" class="input" placeholder="https://res.cloudinary.com/..."></div>
                 <div class="modal-actions">
                     <button type="submit" class="btn btn-primary">Enregistrer</button>
                     <button type="button" class="btn btn-ghost" id="cancelProductBtn">Annuler</button>
@@ -294,7 +295,7 @@
             <h2 id="promoModalTitle">Ajouter un code promo</h2>
             <form id="promoForm">
                 <input type="hidden" id="promoId">
-                <div class="form-group"><label for="promoCode">Code *</label><input type="text" id="promoCode" class="input" required></div>
+                <div class="form-group"><label for="promoCodeInput">Code *</label><input type="text" id="promoCodeInput" class="input" required></div>
                 <div class="form-group"><label for="promoDiscount">Réduction (%) *</label><input type="number" id="promoDiscount" class="input" required min="1" max="100"></div>
                 <div class="form-group"><label for="promoExpiry">Date d'expiration *</label><input type="date" id="promoExpiry" class="input" required></div>
                 <div class="modal-actions">
@@ -429,7 +430,7 @@
             async function loadProducts() {
                 var tbody = document.getElementById('productsTableBody');
                 if (!tbody) return;
-                tbody.innerHTML = '<tr><td colspan="8">Chargement...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9">Chargement...</td></tr>';
                 try {
                     var data = await apiFetch('/api/products?limit=50');
                     tbody.innerHTML = '';
@@ -442,12 +443,13 @@
                             '<td>' + formatPrice(p.price) + '</td>' +
                             '<td>' + p.stock + '</td>' +
                             '<td>' + (p.featured ? '<span class="badge badge-featured">★</span>' : '—') + '</td>' +
+                            '<td>' + (p.isWatermarkable ? '✅' : '—') + '</td>' +
                             '<td><button class="btn btn-ghost btn-sm edit-product" data-id="' + p._id + '">✏️</button> <button class="btn btn-danger btn-sm delete-product" data-id="' + p._id + '">🗑️</button></td>';
                         tbody.appendChild(tr);
                     });
                     document.querySelectorAll('.edit-product').forEach(function(b) { b.addEventListener('click', function() { openProductModal(b.getAttribute('data-id')); }); });
                     document.querySelectorAll('.delete-product').forEach(function(b) { b.addEventListener('click', function() { deleteProduct(b.getAttribute('data-id')); }); });
-                } catch (e) { tbody.innerHTML = '<tr><td colspan="8">Erreur: ' + e.message + '</td></tr>'; }
+                } catch (e) { tbody.innerHTML = '<tr><td colspan="9">Erreur: ' + e.message + '</td></tr>'; }
             }
 
             var productModal = document.getElementById('productModal');
@@ -460,6 +462,7 @@
             addProductBtn.addEventListener('click', function() {
                 productIdInput.value = ''; productForm.reset();
                 document.getElementById('prodStock').value = '9999';
+                document.getElementById('prodWatermarkable').checked = false;
                 productModalTitle.textContent = 'Ajouter un produit';
                 productModal.classList.remove('hidden');
             });
@@ -477,6 +480,7 @@
                 formData.append('type', document.getElementById('prodType').value);
                 formData.append('stock', document.getElementById('prodStock').value);
                 formData.append('featured', document.getElementById('prodFeatured').checked ? 'true' : 'false');
+                formData.append('isWatermarkable', document.getElementById('prodWatermarkable').checked ? 'true' : 'false');
                 formData.append('fileUrl', document.getElementById('prodFileUrl').value);
                 var imageFiles = document.getElementById('prodImages').files;
                 for (var i = 0; i < imageFiles.length; i++) { formData.append('images', imageFiles[i]); }
@@ -500,6 +504,7 @@
                     document.getElementById('prodType').value = p.type || 'digital';
                     document.getElementById('prodStock').value = p.stock;
                     document.getElementById('prodFeatured').checked = p.featured;
+                    document.getElementById('prodWatermarkable').checked = p.isWatermarkable;
                     document.getElementById('prodFileUrl').value = p.fileUrl || '';
                     productModalTitle.textContent = 'Modifier le produit';
                     productModal.classList.remove('hidden');
@@ -549,7 +554,7 @@
             promoForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 var id = document.getElementById('promoId').value;
-                var body = { code: document.getElementById('promoCode').value, discount: parseInt(document.getElementById('promoDiscount').value), expiresAt: document.getElementById('promoExpiry').value };
+                var body = { code: document.getElementById('promoCodeInput').value, discount: parseInt(document.getElementById('promoDiscount').value), expiresAt: document.getElementById('promoExpiry').value };
                 try {
                     if (id) { await apiFetch('/api/promo/' + id, { method: 'PUT', body: JSON.stringify(body) }); showToast('Code promo mis à jour'); }
                     else { await apiFetch('/api/promo', { method: 'POST', body: JSON.stringify(body) }); showToast('Code promo créé'); }
@@ -563,7 +568,7 @@
                 var p = data.promoCodes.find(function(x) { return x._id === id; });
                 if (!p) return;
                 document.getElementById('promoId').value = p._id;
-                document.getElementById('promoCode').value = p.code;
+                document.getElementById('promoCodeInput').value = p.code;
                 document.getElementById('promoDiscount').value = p.discount;
                 document.getElementById('promoExpiry').value = new Date(p.expiresAt).toISOString().split('T')[0];
                 document.getElementById('promoModalTitle').textContent = 'Modifier le code promo';
@@ -639,7 +644,7 @@
                 feedback.textContent = 'Upload en cours...';
                 try {
                     var res = await apiFetch('/api/upload/pdf', { method: 'POST', body: formData });
-                    feedback.textContent = '✅ Uploadé : ' + res.file.url;
+                    feedback.innerHTML = '✅ Uploadé !<br>URL : <a href="' + res.file.url + '" target="_blank" style="color:var(--blue-400);">' + res.file.url + '</a>';
                     showToast('PDF uploadé avec succès');
                 } catch (e) { feedback.textContent = '❌ Erreur: ' + e.message; }
             });
