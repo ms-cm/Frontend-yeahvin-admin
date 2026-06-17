@@ -333,6 +333,18 @@
         </div>
     </div>
 
+    <!-- Modal Confirmation (remplace le confirm() natif du navigateur) -->
+    <div class="modal-overlay hidden" id="confirmModal">
+        <div class="modal" style="width:420px;">
+            <h2 id="confirmModalTitle">Confirmer</h2>
+            <p id="confirmModalMessage" style="color:var(--text-secondary);font-size:14px;line-height:1.6;"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-primary" id="confirmModalOk">Confirmer</button>
+                <button type="button" class="btn btn-ghost" id="confirmModalCancel">Annuler</button>
+            </div>
+        </div>
+    </div>
+
     <div class="toast" id="toast"></div>
 
     <script>
@@ -355,6 +367,28 @@
                 clearTimeout(toast._t);
                 toast._t = setTimeout(function() { toast.classList.remove('toast--visible'); }, 3000);
             }
+
+            // Remplace window.confirm() par une modale stylée cohérente avec le thème
+            var confirmModal = document.getElementById('confirmModal');
+            var confirmModalMessage = document.getElementById('confirmModalMessage');
+            var confirmModalOk = document.getElementById('confirmModalOk');
+            var confirmModalCancel = document.getElementById('confirmModalCancel');
+            var confirmResolve = null;
+
+            function showConfirm(message, okLabel, danger) {
+                confirmModalMessage.textContent = message;
+                confirmModalOk.textContent = okLabel || 'Confirmer';
+                confirmModalOk.className = danger ? 'btn btn-danger' : 'btn btn-primary';
+                confirmModal.classList.remove('hidden');
+                return new Promise(function(resolve) { confirmResolve = resolve; });
+            }
+            function closeConfirm(result) {
+                confirmModal.classList.add('hidden');
+                if (confirmResolve) { confirmResolve(result); confirmResolve = null; }
+            }
+            confirmModalOk.addEventListener('click', function() { closeConfirm(true); });
+            confirmModalCancel.addEventListener('click', function() { closeConfirm(false); });
+            confirmModal.addEventListener('click', function(e) { if (e.target === confirmModal) closeConfirm(false); });
 
             function formatPrice(p) {
                 return new Intl.NumberFormat('fr-FR').format(p) + ' FCFA';
@@ -535,7 +569,7 @@
             }
 
             async function deleteProduct(id) {
-                if (!confirm('Supprimer ce produit ? Cette action est irréversible.')) return;
+                if (!(await showConfirm('Supprimer ce produit ? Cette action est irréversible.', 'Supprimer', true))) return;
                 try { await apiFetch('/api/products/' + id, { method: 'DELETE' }); showToast('Produit supprimé'); loadProducts(); loadDashboard(); }
                 catch (e) { showToast('Erreur: ' + e.message, 'error'); }
             }
@@ -599,7 +633,7 @@
             }
 
             async function deletePromo(id) {
-                if (!confirm('Supprimer ce code promo ?')) return;
+                if (!(await showConfirm('Supprimer ce code promo ?', 'Supprimer', true))) return;
                 await apiFetch('/api/promo/' + id, { method: 'DELETE' });
                 showToast('Code promo supprimé'); loadPromos();
             }
@@ -638,7 +672,7 @@
                     document.querySelectorAll('.approve-order').forEach(function(btn) {
                         btn.addEventListener('click', async function() {
                             var orderNumber = this.getAttribute('data-order');
-                            if (!confirm('Valider la commande ' + orderNumber + ' ? Les liens de téléchargement seront générés.')) return;
+                            if (!(await showConfirm('Valider la commande ' + orderNumber + ' ? Les liens de téléchargement seront générés.', 'Valider', false))) return;
                             this.disabled = true;
                             this.textContent = 'Validation...';
                             try {
