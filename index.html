@@ -98,7 +98,9 @@
             background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);
             padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
         }
-        .admin-header .logo { font-family: var(--font-heading); font-size: 24px; font-weight: 700; }
+        .admin-header .logo { display: flex; align-items: center; gap: 10px; }
+        .logo__img { height: 36px; width: auto; display: block; }
+        .admin-header__badge { font-family: var(--font-heading); font-size: 16px; font-weight: 600; color: var(--text-secondary); padding-left: 10px; border-left: 1px solid var(--border-color); }
         .admin-header .user-info { display: flex; align-items: center; gap: 12px; }
         .admin-nav {
             background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);
@@ -159,7 +161,7 @@
            ============================================ */
         @media (max-width: 768px) {
             .admin-header { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
-            .admin-header .logo { font-size: 20px; }
+            .admin-header .logo__img { height: 30px; }
             .admin-nav { padding: 0 12px; }
             .admin-nav button { padding: 11px 14px; font-size: 13px; }
             .admin-content { padding: 16px; }
@@ -196,7 +198,10 @@
     <!-- App -->
     <div id="app" class="hidden" style="display:flex;flex-direction:column;min-height:100vh;">
         <header class="admin-header">
-            <span class="logo">⚡ Yeahvin Admin</span>
+            <div class="logo">
+                <img src="assets/logo.png" alt="Yeahvin" class="logo__img">
+                <span class="admin-header__badge">Admin</span>
+            </div>
             <div class="user-info">
                 <span style="color:var(--text-muted);font-size:14px;">Admin</span>
                 <button class="btn btn-ghost btn-sm" id="logoutBtn">Déconnexion</button>
